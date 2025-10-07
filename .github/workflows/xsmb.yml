@@ -1,0 +1,37 @@
+name: Cập nhật XSMB
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # 12h UTC = 19h ICT
+  workflow_dispatch:
+
+jobs:
+  xsmb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run XSMB scraper
+        env:
+          SPREADSHEET_ID: ${{ secrets.XSMB_SPREADSHEET_ID }}
+          WORKSHEET_NAME: ${{ secrets.XSMB_WORKSHEET_NAME }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python xsmb.py
+
+      - name: Upload log if failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xsmb-debug
+          path: .
